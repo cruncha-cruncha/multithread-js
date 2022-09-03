@@ -1,13 +1,6 @@
-import {
-    spawnWindow,
-    checkLive,
-    poll,
-} from "../library/leader/singles.js";
+import { Handler } from "../library/leader/viaPostMessage.js";
 
 // python -m http.server 8000
-
-// http://localhost:8000#1111111111111111
-// http://localhost:8000#2222222222222222
 
 let windowList = [];
 
@@ -15,12 +8,14 @@ const add = (a, b) => {
     return a + b;
 }
 
+const handler = new Handler();
+
 export const testClear = () => {
     windowList = [];
 }
 
 export const newTab = () => {
-    const { success, hint = "", window: newWindow = null } = spawnWindow();
+    const { success, hint = "", window: newWindow = null } = Handler.spawnWindow();
     if (success) {
         windowList.push(newWindow);
     } else {
@@ -30,7 +25,7 @@ export const newTab = () => {
 
 export const isAlive = async () => {
     windowList.forEach(async (targetWindow) => {
-        const out = await checkLive({ targetWindow });
+        const out = await handler.checkLive({ targetWindow });
         console.log("checkLive", { out });
     });
 }
@@ -41,7 +36,7 @@ export const testSetFn = () => {
 
 export const testPoll = () => {
     windowList.forEach(async (targetWindow) => {
-        const out = await poll({ targetWindow });
+        const out = await handler.poll({ targetWindow });
         console.log("poll", { out });
     });
 }

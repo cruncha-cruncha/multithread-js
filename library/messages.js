@@ -67,14 +67,6 @@ export const validateIntention = (intention) => {
     return true;
 }
 
-export const validateWindow = (targetWindow) => {
-    if (!targetWindow || typeof targetWindow.postMessage !== "function") {
-        return false;
-    }
-
-    return true;
-}
-
 export const validateMessageShape = (message) => {
     if (!message) {
         return { success: false, hint: "missing message" };
@@ -118,7 +110,7 @@ export const validateMessageData = ({ intention, data }) => {
 
     switch (intention) {
         case "set-fn": return attemptParse(parseSetFnData, data);
-        case "clear-all-fns": return { success: true, data };
+        case "clear-fns": return { success: true, data };
         case "run": return attemptParse(parseRunData, data);
         case "poll": return { success: true, data };
         case "is-alive": return { success: true, data };

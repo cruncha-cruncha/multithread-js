@@ -1,192 +1,150 @@
-import {
-    sendMessage,
-    waitForResponse,
-} from "./listener.js";
-import {
-    newThreadKey,
-    validateWindow,
-    validateMessageData,
-} from "../messaging.js";
+import { validateMessageData } from "../messages.js";
+import { waitForResponse } from "./responseBuffer.js";
 
-const BASE_THREAD_URL = "http://localhost:8000"; // TODO
-
-export const spawnWindow = () => {
-    const threadKey = newThreadKey();
-
-    const url = `${BASE_THREAD_URL}#${threadKey}`;
-
-    try {
-        const newWindow = window.open(url);
-        if (!newWindow) {
-            return { success: false, hint: "no new window" };
-        } else {
-            return { success: true, window: newWindow };
+export const getCheckLive = ({ sendMessage }) => {
+    return async () => {
+        const { success: goodSend, nonce = "", hint } = sendMessage({
+            intention: 'is-alive',
+        });
+        if (!goodSend) {
+            return false;
         }
-    } catch (e) {
-        return { success: false, hint: `caught: ${e.toString()}` };
+
+        const { success: goodResponse, message = null, hint: hint6 } = await waitForResponse({
+            nonce,
+            retry: 2,
+        });
+        if (!goodResponse) {
+            return false;
+        }
+
+        return message.intention === "am-alive";
     }
 }
 
-export const checkLive = async ({ targetWindow }) => {
-    if (!validateWindow(targetWindow)) {
-        return false;
+export const getSetFn = ({ sendMessage }) => {
+    // does sFn have to be a string? Or can we just pass a function??
+    return async ({ fnName, sFn }) => {
+        if (!fnName || typeof fnName !== "string") {
+            return { success: false, hint: "bad fnName" };
+        }
+
+        if (!sFn || typeof sFn !== "string") {
+            return { success: false, hint: "bad fn" };
+        }
+
+        const { success: goodSend, hint: hint67 = "", nonce = "" } = sendMessage({
+            intention: 'set-fn',
+            data: { fnName, sFn },
+        });
+        if (!goodSend) {
+            return { success: false, hint: `sendMessage failed: ${hint67}` };
+        }
+
+        const { success: goodResponse, hint: hint33 = "", message = null } = await waitForResponse({
+            nonce,
+            retry: 10,
+        });
+        if (!goodResponse) {
+            return { success: false, hint: `waitForResponse failed: ${hint33}` };
+        }
+
+        const { success: validData, hint: hint95 = "", data = null } = validateMessageData({
+            intention: message.intention,
+            data: message.data
+        });
+        if (!validData) {
+            return { success: false, hint: `validateMessageData failed: ${hint95}` }
+        }
+
+        if (message.intention === "set-fn-bad") {
+            return { success: false, hint: `why does it feel so good to be bad: ${data.hint}` };
+        } else if (message.intention !== "set-fn-good") {
+            return { success: false, hint: "ill-intentioned response message" };
+        }
+
+        return { success: true };
     }
-
-    const { success, nonce = "" } = sendMessage({
-        targetWindow,
-        intention: 'is-alive',
-    });
-
-    if (!success) {
-        return false;
-    }
-
-    const { success: goodResponse, message = null } = await waitForResponse({
-        nonce,
-        retry: 2,
-    });
-    if (!goodResponse) {
-        return false;
-    }
-
-    return message.intention === "am-alive";
 }
 
-export const poll = async ({ targetWindow }) => {
-    if (!validateWindow(targetWindow)) {
-        return { success: false, hint: "bad targetWindow" };
-    }
+export const getPoll = ({ sendMessage }) => {
+    return async () => {
+        const { success: goodSend, hint: hint28 = "", nonce = "" } = sendMessage({
+            intention: 'poll',
+        });
+        if (!goodSend) {
+            return { success: false, hint: `sendMessage failed: ${hint28}` };
+        }
 
-    const { success: goodSend, hint: hint28 = "", nonce = "" } = sendMessage({
-        targetWindow,
-        intention: 'poll',
-    });
-    if (!goodSend) {
-        return { success: false, hint: `sendMessage failed: ${hint28}` };
-    }
+        const { success: goodResponse, hint: hint80 = "", message = null } = await waitForResponse({
+            nonce,
+            retry: 10,
+        });
+        if (!goodResponse) {
+            return { success: false, hint: `waitForResponse failed: ${hint80}` };
+        }
 
-    const { success: goodResponse, hint: hint80 = "", message = null } = await waitForResponse({
-        nonce,
-        retry: 10,
-    });
-    if (!goodResponse) {
-        return { success: false, hint: `waitForResponse failed: ${hint80}` };
-    }
+        const { success: validData, hint: hint51 = "", data = null } = validateMessageData({
+            intention: message.intention,
+            data: message.data,
+        });
+        if (!validData) {
+            return { success: false, hint: `validateMessageData failed: ${hint51}` };
+        }
 
-    const { success: validData, hint: hint51 = "", data = null } = validateMessageData({
-        intention: message.intention,
-        data: message.data
-    });
-    if (!validData) {
-        return { success: false, hint: `validateMessageData failed: ${hint51}` }
-    }
+        if (message.intention !== "meta") {
+            return { success: false, hint: "ill-intentioned response message" };
+        }
 
-    if (message.intention !== "meta") {
-        return { success: false, hint: "ill-intentioned response message" };
+        return { success: true, meta: data };
     }
-
-    return { success: true, meta: data };
 }
 
-export const clearAllFns = async ({ targetWindow }) => {
-    if (!validateWindow(targetWindow)) {
-        return;
+export const getClearFns = ({ sendMessage }) => {
+    return () => {
+        sendMessage({
+            intention: 'clear-fns',
+        });
     }
-
-    sendMessage({
-        targetWindow,
-        intention: 'clear-all-fns'
-    });
 }
 
-// does sFn have to be a string? Or can we just pass a function??
-export const setFn = async ({ fnName, sFn, targetWindow }) => {
-    if (!validateWindow(targetWindow)) {
-        return { success: false, hint: "bad targetWindow" };
+export const getExecute = ({ sendMessage }) => {
+    return async ({ args, fnName }) => {
+        if (!args || !Array.isArray(args)) {
+            return { success: false, hint: "bad args" };
+        }
+
+        if (!fnName || typeof fnName !== "string") {
+            return { success: false, hint: "bad fnName" };
+        }
+
+        const { success: goodSend, hint: hint49 = "", nonce = "" } = sendMessage({
+            intention: 'run',
+            data: { args, fnName },
+        });
+        if (!goodSend) {
+            return { success: false, hint: `sendMessage failed: ${hint49}` };
+        }
+
+        const { success: goodResponse, hint: hint50 = "", message = null } = await waitForResponse({ nonce, retry: 100 });
+        if (!goodResponse) {
+            return { success: false, hint: `waitForResponse failed: ${hint50}` };
+        }
+
+        const { success: validData, hint: hint12 = "", data = null } = validateMessageData({
+            intention: message.intention,
+            data: message.data
+        });
+        if (!validData) {
+            return { success: false, hint: `validateMessageData failed: ${hint12}` }
+        }
+
+        if (message.intention === "run-bad") {
+            return { success: false, hint: `bad run: ${data.hint}` };
+        } else if (message.intention !== "run-good") {
+            return { success: false, hint: "ill-intentioned response message" };
+        }
+
+        return { success: true, result: data.result };
     }
-
-    if (!fnName || typeof fnName !== "string") {
-        return { success: false, hint: "bad fnName" };
-    }
-
-    if (!sFn || typeof sFn !== "string") {
-        return { success: false, hint: "bad fn" };
-    }
-
-    const { success: goodSend, hint: hint67 = "", nonce = "" } = sendMessage({
-        targetWindow,
-        intention: 'set-fn',
-        data: { fnName, sFn },
-    });
-    if (!goodSend) {
-        return { success: false, hint: `sendMessage failed: ${hint67}` };
-    }
-
-    const { success: goodResponse, hint: hint33 = "", message = null } = await waitForResponse({
-        nonce,
-        retry: 10,
-    });
-    if (!goodResponse) {
-        return { success: false, hint: `waitForResponse failed: ${hint33}` };
-    }
-
-    const { success: validData, hint: hint95 = "", data = null } = validateMessageData({
-        intention: message.intention,
-        data: message.data
-    });
-    if (!validData) {
-        return { success: false, hint: `validateMessageData failed: ${hint95}` }
-    }
-
-    if (message.intention === "set-fn-bad") {
-        return { success: false, hint: `why does it feel so good to be bad: ${data.hint}` };
-    } else if (message.intention !== "set-fn-good") {
-        return { success: false, hint: "ill-intentioned response message" };
-    }
-
-    return { success: true };
-}
-
-export const execute = async ({ args, fnName, targetWindow }) => {
-    if (!validateTargetWindow(targetWindow)) {
-        return { success: false, hint: "bad targetWindow" };
-    }
-
-    if (!args || !Array.isArray(args)) {
-        return { success: false, hint: "bad args" };
-    }
-
-    if (!fnName || typeof fnName !== "string") {
-        return { success: false, hint: "bad fnName" };
-    }
-
-    const { success: goodSend, hint: hint49 = "", nonce = "" } = sendMessage({
-        targetWindow,
-        intention: 'run',
-        data: { args, fnName },
-    });
-    if (!goodSend) {
-        return { success: false, hint: `sendMessage failed: ${hint49}` };
-    }
-
-    const { success: goodResponse, hint: hint50 = "", message = null } = await waitForResponse({ nonce, retry: 100 });
-    if (!goodResponse) {
-        return { success: false, hint: `waitForResponse failed: ${hint50}` };
-    }
-
-    const { success: validData, hint: hint12 = "", data = null } = validateMessageData({
-        intention: message.intention,
-        data: message.data
-    });
-    if (!validData) {
-        return { success: false, hint: `validateMessageData failed: ${hint12}` }
-    }
-
-    if (message.intention === "run-bad") {
-        return { success: false, hint: `bad run: ${data.hint}` };
-    } else if (message.intention !== "run-good") {
-        return { success: false, hint: "ill-intentioned response message" };
-    }
-
-    return { success: true, result: data.result };
 }
