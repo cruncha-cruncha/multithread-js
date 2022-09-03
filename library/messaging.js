@@ -67,12 +67,20 @@ export const validateIntention = (intention) => {
     return true;
 }
 
+export const validateWindow = (targetWindow) => {
+    if (!targetWindow || typeof targetWindow.postMessage !== "function") {
+        return false;
+    }
+
+    return true;
+}
+
 export const validateMessageShape = (message) => {
     if (!message) {
         return { success: false, hint: "missing message" };
     }
 
-    if (!('nonce' in message) || !('threadKey' in message) || !('intention' in message) || !('data' in message)) {
+    if (!('nonce' in message) || !('intention' in message) || !('data' in message)) {
         return { success: false, hint: "missing properties" };
     }
 
@@ -80,27 +88,22 @@ export const validateMessageShape = (message) => {
         return { success: false, hint: "bad nonce" };
     }
 
-    if (!validateThreadKey(message.threadKey)) {
-        return { success: false, hint: "bad threadKey" };
-    }
-
     if (!validateIntention(message.intention)) {
         return { success: false, hint: "bad intention" };
     }
 
-    if (!!data && typeof data !== "string") {
-        return { success: false, hint: "bad data" };
+    if ('threadKey' in message && !validateThreadKey(message.threadKey)) {
+        return { success: false, hint: "bad threadKey" };
     }
 
     try {
-        const data = JSON.parse(message.data);
         return {
             success: true,
             message: {
                 nonce: message.nonce,
-                threadKey: message.threadKey,
                 intention: message.intention,
-                data: data || null,
+                threadKey: message.threadKey || "",
+                data: message.data || null,
             },
         };
     } catch (e) {
@@ -252,11 +255,11 @@ const parseMetaData = (data) => {
         return { success: false, hint: "missing data" };
     }
 
-    if (!('functions' in data) || !('isRunnings' in data)) {
+    if (!('functions' in data) || !('isRunning' in data)) {
         return { success: false, hint: "missing properties" };
     }
 
-    if (!Array.isArray(data.functions) || data.function.filter(f => typeof f !== "string").length > 0) {
+    if (!Array.isArray(data.functions) || data.functions.filter(f => typeof f !== "string").length > 0) {
         return { success: false, hint: "bad functions" };
     }
 

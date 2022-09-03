@@ -1,13 +1,13 @@
 import {
-    genNonce,
+    newNonce,
     validateNonce, 
-    validateThreadKey,
     validateIntention,
     validateMessageShape,
-} from "../messaging";
-import { Buffer } from "../buffer";
+    validateWindow,
+} from "../messaging.js";
+import { Buffer } from "../buffer.js";
 
-const responseBuffer = new Buffer(100);
+const responseBuffer = new Buffer(10);
 
 export const getResponseBuffer = () => {
     return responseBuffer;
@@ -22,7 +22,7 @@ window.addEventListener("message", async (event) => {
 
     const nonce = message.nonce;
 
-    if (!responseBuffer.add({
+    if (!responseBuffer.insert({
         key: nonce,
         val: message,
     })) {
@@ -34,25 +34,20 @@ export const sleep = (ms) => {
     return new Promise(r => setTimeout(r, ms));
 }
 
-export const sendMessage = ({ threadKey, intention, data }) => {
-    if (!validateThreadKey(threadKey)) {
-        return { success: false, hint: "bad threadKey" };
+export const sendMessage = ({ targetWindow, intention, data }) => {
+    if (!validateWindow(targetWindow)) {
+        return { success: false, hint: "bad targetWindow" };
     }
 
     if (!validateIntention(intention)) {
         return { success: false, hint: "bad intention" };
     }
 
-    if (!!data && typeof data !== "string") {
-        return { success: false, hint: "bad data" };
-    }
-
-    const nonce = genNonce();
+    const nonce = newNonce();
 
     try {
-        window.postMessage({
+        targetWindow.postMessage({
             nonce,
-            threadKey,
             intention,
             data: data || null,
         }, "*");
@@ -83,7 +78,7 @@ export const waitForResponse = async ({ nonce, retry = 50, pause = 100 }) => {
         i++;
 
         const { found, val = null } = responseBuffer.take({ key: nonce });
-        if (found) return { success: true, response: val };
+        if (found) return { success: true, message: val };
 
         await sleep(pause);
     }

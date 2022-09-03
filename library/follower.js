@@ -3,7 +3,8 @@ import {
     validateNonce,
     validateMessageShape,
     validateMessageData,
-} from "./messaging";
+    validateWindow,
+} from "./messaging.js";
 
 const threadKey = (() => {
     const fragment = window.location.hash;
@@ -14,7 +15,10 @@ const threadKey = (() => {
     }
 })();
 
-const sendMessage = ({ nonce, intention, data }) => {
+const sendMessage = ({ targetWindow, nonce, intention, data }) => {
+    if (!validateWindow(targetWindow)) {
+        return false;
+    }
 
     if (!validateNonce(nonce)) {
         return false;
@@ -24,12 +28,8 @@ const sendMessage = ({ nonce, intention, data }) => {
         return false;
     }
 
-    if (!!data && typeof data !== "string") {
-        return false;
-    }
-
     try {
-        window.postMessage({
+        targetWindow.postMessage({
             nonce,
             threadKey,
             intention,
@@ -114,24 +114,18 @@ const Operator = (() => {
             }
         },
 
-        getMeta: ({ nonce }) => {
-            sendMessage({
-                nonce,
-                intention: "meta",
-                data: {
-                    functions: Object.keys(functions),
-                    isRunning: Object.keys(isRunning),
-                },
-            });
-        },
+        getMeta: () => ({
+            functions: Object.keys(functions),
+            isRunning: Object.keys(isRunning),
+        }),
 
     }
 })();
 
-window.addEventListener("message", async (event) => {
+window.addEventListener("message", async (event) => {    
     const { success: validShape, message = null } = validateMessageShape(event.data);
 
-    if (!validShape || message.threadKey !== threadKey) {
+    if (!validShape) {
         return;
     }
 
@@ -142,14 +136,15 @@ window.addEventListener("message", async (event) => {
     }
 
     const nonce = message.nonce;
+    const targetWindow = event.source;
 
     switch (message.intention) {
         case 'set-fn': {
             const { success, hint = "" } = Operator.setFn({ ...data });
             if (success) {
-                sendMessage({ nonce, intention: "set-fn-good" });
+                sendMessage({ targetWindow, nonce, intention: "set-fn-good" });
             } else {
-                sendMessage({ nonce, intention: "set-fn-bad", data: { hint } });
+                sendMessage({ targetWindow, nonce, intention: "set-fn-bad", data: { hint } });
             }
             break;
         }
@@ -159,17 +154,18 @@ window.addEventListener("message", async (event) => {
         case 'run': {
             const { success, hint = "", result = null } = await Operator.run({ ...data, runKey: nonce });
             if (success) {
-                sendMessage({ nonce, intention: "run-good", data: { result } });
+                sendMessage({ targetWindow, nonce, intention: "run-good", data: { result } });
             } else {
-                sendMessage({ nonce, intention: "run-bad", data: { hint } });
+                sendMessage({ targetWindow, nonce, intention: "run-bad", data: { hint } });
             }
             break;
         }
         case 'poll':
-            Operator.getMeta({ nonce });
+            const meta = Operator.getMeta();
+            sendMessage({ targetWindow, nonce, intention: "meta", data: { ...meta } });
             break;
         case 'is-alive':
-            sendMessage({ nonce, intention: "am-alive" });
+            sendMessage({ targetWindow, nonce, intention: "am-alive" });
             break;
     }
 

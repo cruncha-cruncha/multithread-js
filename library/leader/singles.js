@@ -1,58 +1,64 @@
 import {
     sendMessage,
     waitForResponse,
-} from "./listener";
+} from "./listener.js";
 import {
-    validateThreadKey,
-    validateMessageData,
     newThreadKey,
-} from "../messaging";
+    validateWindow,
+    validateMessageData,
+} from "../messaging.js";
 
 const BASE_THREAD_URL = "http://localhost:8000"; // TODO
 
-export const newFragmentKey = () => newThreadKey();
-
-export const spawnTab = ({ fragment: threadKey }) => {
-    if (!validateThreadKey(threadKey)) {
-        return { success: false, hint: "bad fragment" };
-    }
+export const spawnWindow = () => {
+    const threadKey = newThreadKey();
 
     const url = `${BASE_THREAD_URL}#${threadKey}`;
 
     try {
-        window.open(url);
-        return { success: true };
+        const newWindow = window.open(url);
+        if (!newWindow) {
+            return { success: false, hint: "no new window" };
+        } else {
+            return { success: true, window: newWindow };
+        }
     } catch (e) {
         return { success: false, hint: `caught: ${e.toString()}` };
     }
 }
 
-export const checkLive = async ({ fragment: threadKey }) => {
-    if (!validateThreadKey(threadKey)) {
+export const checkLive = async ({ targetWindow }) => {
+    if (!validateWindow(targetWindow)) {
         return false;
     }
 
     const { success, nonce = "" } = sendMessage({
-        threadKey,
-        intention: 'is-alive'
+        targetWindow,
+        intention: 'is-alive',
     });
 
     if (!success) {
         return false;
     }
 
-    const response = await waitForResponse({ nonce, retry: 2 });
+    const { success: goodResponse, message = null } = await waitForResponse({
+        nonce,
+        retry: 2,
+    });
+    if (!goodResponse) {
+        return false;
+    }
 
-    return response.success;
+    return message.intention === "am-alive";
 }
 
-export const poll = async ({ fragment: threadKey}) => {
-    if (!validateThreadKey(threadKey)) {
-        return { success: false, hint: "bad fragment" };
+export const poll = async ({ targetWindow }) => {
+    if (!validateWindow(targetWindow)) {
+        return { success: false, hint: "bad targetWindow" };
     }
 
     const { success: goodSend, hint: hint28 = "", nonce = "" } = sendMessage({
-        threadKey,
+        targetWindow,
         intention: 'poll',
     });
     if (!goodSend) {
@@ -79,24 +85,24 @@ export const poll = async ({ fragment: threadKey}) => {
         return { success: false, hint: "ill-intentioned response message" };
     }
 
-    return { success: true, result: data.result };
+    return { success: true, meta: data };
 }
 
-export const clearAllFns = async ({ fragment: threadKey }) => {
-    if (!validateThreadKey(threadKey)) {
+export const clearAllFns = async ({ targetWindow }) => {
+    if (!validateWindow(targetWindow)) {
         return;
     }
 
     sendMessage({
-        threadKey,
+        targetWindow,
         intention: 'clear-all-fns'
     });
 }
 
 // does sFn have to be a string? Or can we just pass a function??
-export const setFn = async ({ fnName, sFn, fragment: threadKey }) => {
-    if (!validateThreadKey(threadKey)) {
-        return { success: false, hint: "bad fragment" };
+export const setFn = async ({ fnName, sFn, targetWindow }) => {
+    if (!validateWindow(targetWindow)) {
+        return { success: false, hint: "bad targetWindow" };
     }
 
     if (!fnName || typeof fnName !== "string") {
@@ -108,7 +114,7 @@ export const setFn = async ({ fnName, sFn, fragment: threadKey }) => {
     }
 
     const { success: goodSend, hint: hint67 = "", nonce = "" } = sendMessage({
-        threadKey,
+        targetWindow,
         intention: 'set-fn',
         data: { fnName, sFn },
     });
@@ -141,9 +147,9 @@ export const setFn = async ({ fnName, sFn, fragment: threadKey }) => {
     return { success: true };
 }
 
-export const execute = ({ args, fnName, fragment: threadKey }) => {
-    if (!validateThreadKey(threadKey)) {
-        return { success: false, hint: "bad fragment" };
+export const execute = async ({ args, fnName, targetWindow }) => {
+    if (!validateTargetWindow(targetWindow)) {
+        return { success: false, hint: "bad targetWindow" };
     }
 
     if (!args || !Array.isArray(args)) {
@@ -155,7 +161,7 @@ export const execute = ({ args, fnName, fragment: threadKey }) => {
     }
 
     const { success: goodSend, hint: hint49 = "", nonce = "" } = sendMessage({
-        threadKey,
+        targetWindow,
         intention: 'run',
         data: { args, fnName },
     });

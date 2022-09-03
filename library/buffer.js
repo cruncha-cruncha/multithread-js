@@ -13,7 +13,7 @@ export class Buffer {
     }
 
     insert({ key, val }) {
-        if (this.#buffer.filter(obj => obj.key === key).length > 0) {
+        if (this.#buffer.filter(obj => obj?.key === key).length > 0) {
             return false;
         }
 
@@ -25,7 +25,7 @@ export class Buffer {
     take({ key }) {
         let index = -1;
         for (let i = 0; i < this.#buffer.length; i++) {
-            if (this.#buffer[i].key === key) {
+            if (this.#buffer[i]?.key === key) {
                 index = i;
                 break;
             }
@@ -35,7 +35,7 @@ export class Buffer {
             return { found: false };
         }
 
-        const val = this.#buffer[index].val;
+        const val = this.#buffer[index]?.val || null;
 
         this.#buffer[index] = null;
 
@@ -45,13 +45,13 @@ export class Buffer {
                 r = this.#buffer.length - 1;
             }
 
-            current = this.#buffer[r];
+            const current = this.#buffer[r];
             if (current !== null) {
                 this.#buffer[(r+1) % this.#buffer.length] = current;
                 this.#buffer[r] = null;
             }
 
-            if (r === nextInsert) {
+            if (r === this.#nextInsert) {
                 break;
             }
 
