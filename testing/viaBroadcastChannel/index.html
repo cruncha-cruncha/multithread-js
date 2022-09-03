@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>viaBroadcastChannel</title>
+  <script src="./script.js" type="module"></script>
+  <script type="module">
+    import { newWorker, newHandler } from "./script.js"
+    window.newWorker = newWorker;
+    window.newHandler = newHandler;
+  </script>
+</head>
+
+<body>
+  <input type="button" onclick="newWorker()" value="New Worker">
+  <input type="button" onclick="newHandler()" value="New Handler">
+</body>
+
+</html>

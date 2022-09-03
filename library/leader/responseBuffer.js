@@ -1,7 +1,7 @@
 import { Buffer } from "../buffer.js";
 import { validateNonce, validateMessageShape } from "../messages.js";
 
-const responseBuffer = new Buffer(10);
+const responseBuffer = new Buffer(16);
 
 export const sleep = (ms) => {
     return new Promise(r => setTimeout(r, ms));

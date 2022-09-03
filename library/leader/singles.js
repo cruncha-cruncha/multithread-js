@@ -3,22 +3,34 @@ import { waitForResponse } from "./responseBuffer.js";
 
 export const getCheckLive = ({ sendMessage }) => {
     return async () => {
-        const { success: goodSend, nonce = "", hint } = sendMessage({
+        const { success: goodSend, nonce = "", hint: hint28 = "" } = sendMessage({
             intention: 'is-alive',
         });
         if (!goodSend) {
-            return false;
+            return { success: false, hint: hint28 };
         }
 
-        const { success: goodResponse, message = null, hint: hint6 } = await waitForResponse({
+        const { success: goodResponse, message = null, hint: hint93 = "" } = await waitForResponse({
             nonce,
             retry: 2,
         });
         if (!goodResponse) {
-            return false;
+            return { success: false, hint: hint93 };
         }
 
-        return message.intention === "am-alive";
+        const { success: validData, hint: hint22 = "", data = null } = validateMessageData({
+            intention: message.intention,
+            data: message.data
+        });
+        if (!validData) {
+            return { success: false, hint: `validateMessageData failed: ${hint22}` }
+        }
+
+        if (message.intention !== "am-alive") {
+            return { success: false, hint: "ill-intentioned response message" };
+        }
+
+        return { success: true, data: message.data };
     }
 }
 

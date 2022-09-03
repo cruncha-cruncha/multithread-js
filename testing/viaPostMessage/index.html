@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>viaPostMessage</title>
+  <script src="./script.js" type="module"></script>
+  <script type="module">
+    import { testClear, newTab, isAlive, testSetFn, testPoll } from "./script.js"
+    window.testClear = testClear;
+    window.newTab = newTab;
+    window.isAlive = isAlive;
+    window.testSetFn = testSetFn;
+    window.testPoll = testPoll;
+  </script>
+</head>
+
+<body>
+  <input type="button" onclick="testClear()" value="Clear">
+  <input type="button" onclick="newTab()" value="New Tab">
+  <input type="button" onclick="isAlive()" value="Is Alive">
+  <input type="button" onclick="testSetFn()" value="Set Fn">
+  <input type="button" onclick="testPoll()" value="Poll">
+</body>
+
+</html>

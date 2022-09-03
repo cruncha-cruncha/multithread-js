@@ -110,16 +110,16 @@ export const validateMessageData = ({ intention, data }) => {
 
     switch (intention) {
         case "set-fn": return attemptParse(parseSetFnData, data);
-        case "clear-fns": return { success: true, data };
+        case "clear-fns": return { success: true, data: null };
         case "run": return attemptParse(parseRunData, data);
-        case "poll": return { success: true, data };
-        case "is-alive": return { success: true, data };
+        case "poll": return { success: true, data: null };
+        case "is-alive": return { success: true, data: null };
         case "set-fn-bad": return attemptParse(parseSetFnBadData, data);
-        case "set-fn-good": return { success: true, data };
+        case "set-fn-good": return { success: true, data: null };
         case "run-bad": return attemptParse(parseRunBadData, data);
         case "run-good": return attemptParse(parseRunGoodData, data);
         case "meta": return attemptParse(parseMetaData, data);
-        case "am-alive": return { success: true, data };
+        case "am-alive": return attemptParse(parseAmAliveData, data);
         default: return { success: false, hint: "unknown intention" };
     }
 }
@@ -264,6 +264,23 @@ const parseMetaData = (data) => {
         data: {
             functions: data.functions,
             isRunning: data.isRunning,
+        },
+    };
+}
+
+const parseAmAliveData = (data) => {
+    if (!data) {
+        return { success: false, hint: "missing data" };
+    }
+
+    if (!('possibleThreadKey' in data) || typeof data.possibleThreadKey !== "string") {
+        return { success: false, hint: "bad possibleThreadKey" };
+    }
+
+    return {
+        success: true,
+        data: {
+            possibleThreadKey: data.possibleThreadKey,
         },
     };
 }

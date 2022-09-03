@@ -3,12 +3,13 @@
 
 <head>
   <meta charset="utf-8">
-  <title>testing</title>
-  <script src="./script.js" type="module"></script>
+  <title>viaBroadcastChannel</title>
+  <script src="./withHandler.js" type="module"></script>
   <script type="module">
-    import { testClear, newTab, isAlive, testSetFn, testPoll } from "./script.js"
+    import { newWorker, newHandler, testClear, isAlive, testSetFn, testPoll } from "./withHandler.js";
+    window.newWorker = newWorker;
+    window.newHandler = newHandler;
     window.testClear = testClear;
-    window.newTab = newTab;
     window.isAlive = isAlive;
     window.testSetFn = testSetFn;
     window.testPoll = testPoll;
@@ -16,8 +17,9 @@
 </head>
 
 <body>
+  <input type="button" onclick="newWorker()" value="New Worker">
+  <input type="button" onclick="newHandler()" value="New Handler">
   <input type="button" onclick="testClear()" value="Clear">
-  <input type="button" onclick="newTab()" value="New Tab">
   <input type="button" onclick="isAlive()" value="Is Alive">
   <input type="button" onclick="testSetFn()" value="Set Fn">
   <input type="button" onclick="testPoll()" value="Poll">

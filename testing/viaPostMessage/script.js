@@ -1,4 +1,4 @@
-import { Handler } from "../library/leader/viaPostMessage.js";
+import { Handler } from "../../library/leader/viaPostMessage.js";
 
 // python -m http.server 8000
 
@@ -26,7 +26,7 @@ export const newTab = () => {
 export const isAlive = async () => {
     windowList.forEach(async (targetWindow) => {
         const out = await handler.checkLive({ targetWindow });
-        console.log("checkLive", { out });
+        console.log("checkLive", { ...out });
     });
 }
 
@@ -37,7 +37,7 @@ export const testSetFn = () => {
 export const testPoll = () => {
     windowList.forEach(async (targetWindow) => {
         const out = await handler.poll({ targetWindow });
-        console.log("poll", { out });
+        console.log("poll", { ...out });
     });
 }
 

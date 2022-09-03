@@ -1,8 +1,9 @@
 
 // stores (key, value) pairs
-// each key must be unique
+// key does not have to be unique
 // holds at most <limit> pairs
 // when no more room, overwites oldest pair
+// takes oldest first
 
 export class Buffer {
     #nextInsert = 0;
@@ -13,10 +14,6 @@ export class Buffer {
     }
 
     insert({ key, val }) {
-        if (this.#buffer.filter(obj => obj?.key === key).length > 0) {
-            return false;
-        }
-
         this.#buffer[this.#nextInsert] = { key, val };
         this.#nextInsert = (this.#nextInsert + 1) % this.#buffer.length;
         return true;
@@ -24,7 +21,8 @@ export class Buffer {
 
     take({ key }) {
         let index = -1;
-        for (let i = 0; i < this.#buffer.length; i++) {
+        for (let count = 0; count < this.#buffer.length; count++) {
+            const i = (this.#nextInsert + count) % this.#buffer.length;
             if (this.#buffer[i]?.key === key) {
                 index = i;
                 break;

@@ -5,7 +5,7 @@ import {
     validateIntention,
 } from "../messages.js";
 
-export class Handler {
+export class Worker {
     constructor() {
         window.addEventListener("message", listener);
     }

@@ -1,18 +1,20 @@
 import { getGenericHandler, threadKey } from "./handler.js";
-import { validateChannel, CHANNEL_NAME } from "../leader/viaBroadcastChannel";
+import { validateChannel, CHANNEL_NAME } from "../leader/viaBroadcastChannel.js";
 import {
     validateNonce,
     validateIntention,
 } from "../messages.js";
 
-export class Handler {
+export class Worker {
     #channel = null;
 
     constructor() {
         this.#channel = new BroadcastChannel(CHANNEL_NAME)
         const sendMessage = getSendMessage({ channel: this.#channel });
         const handle = getGenericHandler({ sendMessage, checkThreadKey: true });
-        channel.onmessage = (event) => handle(event.data);;
+        this.#channel.onmessage = (event) => {
+            handle(event.data);
+        }
     }
 
     cancel() {

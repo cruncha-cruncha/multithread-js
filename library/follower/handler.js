@@ -6,7 +6,7 @@ import {
 export const threadKey = (() => {
     const fragment = window.location.hash;
     if (!fragment) {
-        return null;
+        return '';
     } else {
         return fragment.slice(1);
     }
@@ -95,7 +95,7 @@ export const getGenericHandler = ({ sendMessage, checkThreadKey }) => {
     return async (packet) => {
         const { success: validShape, hint: hint51 = "", message = null } = validateMessageShape(packet);
 
-        if (!validShape || (checkThreadKey && message.threadKey !== threadKey)) {
+        if (!validShape || (checkThreadKey && message.threadKey !== "*" && message.threadKey !== threadKey)) {
             return;
         }
 
@@ -134,7 +134,7 @@ export const getGenericHandler = ({ sendMessage, checkThreadKey }) => {
                 sendMessage({ nonce, intention: "meta", data: { ...meta } });
                 break;
             case 'is-alive':
-                const huh = sendMessage({ nonce, intention: "am-alive" });
+                sendMessage({ nonce, intention: "am-alive", data: { possibleThreadKey: threadKey } });
                 break;
         }
     }
