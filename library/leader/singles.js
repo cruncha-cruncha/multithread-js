@@ -1,36 +1,50 @@
 import { validateMessageData } from "../messages.js";
 import { waitForResponse } from "./responseBuffer.js";
 
+export const receiveMessage = async ({ nonce, retry = 50, pause = 100 }) => {
+    const { success: goodResponse, hint: hint93, message } = await waitForResponse({
+        nonce,
+        retry,
+        pause,
+    });
+
+    if (!goodResponse) {
+        return { success: false, hint: hint93 };
+    }
+
+    const { success: validData, hint: hint22, data } = validateMessageData({
+        intention: message.intention,
+        data: message.data,
+    });
+
+    if (!validData) {
+        return { success: false, hint: hint22 }
+    }
+
+    return { success: true, ...message, data };
+}
+
 export const getCheckLive = ({ sendMessage }) => {
     return async () => {
-        const { success: goodSend, nonce = "", hint: hint28 = "" } = sendMessage({
+        const { success: sent, hint: hint28, nonce } = sendMessage({
             intention: 'is-alive',
         });
-        if (!goodSend) {
+
+        if (!sent) {
             return { success: false, hint: hint28 };
         }
 
-        const { success: goodResponse, message = null, hint: hint93 = "" } = await waitForResponse({
-            nonce,
-            retry: 2,
-        });
-        if (!goodResponse) {
-            return { success: false, hint: hint93 };
+        const { success: reception, hint: hint53, intention, data } = await receiveMessage({ nonce, retry: 2 });
+
+        if (!reception) {
+            return { success: false, hint: hint53 };
         }
 
-        const { success: validData, hint: hint22 = "", data = null } = validateMessageData({
-            intention: message.intention,
-            data: message.data
-        });
-        if (!validData) {
-            return { success: false, hint: `validateMessageData failed: ${hint22}` }
-        }
-
-        if (message.intention !== "am-alive") {
+        if (intention !== "am-alive") {
             return { success: false, hint: "ill-intentioned response message" };
         }
 
-        return { success: true, data: message.data };
+        return { success: true, data: data };
     }
 }
 
@@ -45,33 +59,24 @@ export const getSetFn = ({ sendMessage }) => {
             return { success: false, hint: "bad fn" };
         }
 
-        const { success: goodSend, hint: hint67 = "", nonce = "" } = sendMessage({
+        const { success: sent, hint: hint67, nonce } = sendMessage({
             intention: 'set-fn',
             data: { fnName, sFn },
         });
-        if (!goodSend) {
-            return { success: false, hint: `sendMessage failed: ${hint67}` };
+
+        if (!sent) {
+            return { success: false, hint: hint67 };
         }
 
-        const { success: goodResponse, hint: hint33 = "", message = null } = await waitForResponse({
-            nonce,
-            retry: 10,
-        });
-        if (!goodResponse) {
-            return { success: false, hint: `waitForResponse failed: ${hint33}` };
+        const { success: reception, hint: hint33, intention, data } = await receiveMessage({ nonce, retry: 10 });
+
+        if (!reception) {
+            return { success: false, hint: hint33 };
         }
 
-        const { success: validData, hint: hint95 = "", data = null } = validateMessageData({
-            intention: message.intention,
-            data: message.data
-        });
-        if (!validData) {
-            return { success: false, hint: `validateMessageData failed: ${hint95}` }
-        }
-
-        if (message.intention === "set-fn-bad") {
-            return { success: false, hint: `why does it feel so good to be bad: ${data.hint}` };
-        } else if (message.intention !== "set-fn-good") {
+        if (intention === "set-fn-bad") {
+            return { success: false, hint: `why does it feel so good to be bad? ${data.hint}` };
+        } else if (intention !== "set-fn-good") {
             return { success: false, hint: "ill-intentioned response message" };
         }
 
@@ -81,30 +86,21 @@ export const getSetFn = ({ sendMessage }) => {
 
 export const getPoll = ({ sendMessage }) => {
     return async () => {
-        const { success: goodSend, hint: hint28 = "", nonce = "" } = sendMessage({
+        const { success: sent, hint: hint28, nonce } = sendMessage({
             intention: 'poll',
         });
-        if (!goodSend) {
-            return { success: false, hint: `sendMessage failed: ${hint28}` };
+
+        if (!sent) {
+            return { success: false, hint: hint28 };
         }
 
-        const { success: goodResponse, hint: hint80 = "", message = null } = await waitForResponse({
-            nonce,
-            retry: 10,
-        });
-        if (!goodResponse) {
-            return { success: false, hint: `waitForResponse failed: ${hint80}` };
+        const { success: reception, hint: hint80, intention, data } = await receiveMessage({ nonce, retry: 10 });
+
+        if (!reception) {
+            return { success: false, hint: hint80 };
         }
 
-        const { success: validData, hint: hint51 = "", data = null } = validateMessageData({
-            intention: message.intention,
-            data: message.data,
-        });
-        if (!validData) {
-            return { success: false, hint: `validateMessageData failed: ${hint51}` };
-        }
-
-        if (message.intention !== "meta") {
+        if (intention !== "meta") {
             return { success: false, hint: "ill-intentioned response message" };
         }
 
@@ -130,30 +126,24 @@ export const getExecute = ({ sendMessage }) => {
             return { success: false, hint: "bad fnName" };
         }
 
-        const { success: goodSend, hint: hint49 = "", nonce = "" } = sendMessage({
+        const { success: sent, hint: hint49, nonce } = sendMessage({
             intention: 'run',
             data: { args, fnName },
         });
-        if (!goodSend) {
-            return { success: false, hint: `sendMessage failed: ${hint49}` };
+
+        if (!sent) {
+            return { success: false, hint: hint49 };
         }
 
-        const { success: goodResponse, hint: hint50 = "", message = null } = await waitForResponse({ nonce, retry: 100 });
-        if (!goodResponse) {
-            return { success: false, hint: `waitForResponse failed: ${hint50}` };
+        const { success: reception, hint: hint50, intention, data } = await receiveMessage({ nonce, retry: 10 });
+
+        if (!reception) {
+            return { success: false, hint: hint50 };
         }
 
-        const { success: validData, hint: hint12 = "", data = null } = validateMessageData({
-            intention: message.intention,
-            data: message.data
-        });
-        if (!validData) {
-            return { success: false, hint: `validateMessageData failed: ${hint12}` }
-        }
-
-        if (message.intention === "run-bad") {
+        if (intention === "run-bad") {
             return { success: false, hint: `bad run: ${data.hint}` };
-        } else if (message.intention !== "run-good") {
+        } else if (intention !== "run-good") {
             return { success: false, hint: "ill-intentioned response message" };
         }
 

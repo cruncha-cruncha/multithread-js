@@ -25,7 +25,7 @@ export class Worker {
 }
 
 const getSendMessage = ({ channel }) => {
-    return ({ nonce, intention, data = null }) => {
+    return ({ nonce, intention, data }) => {
         if (!validateChannel(channel)) {
             return { success: false, hint: "bad channel" };
         }

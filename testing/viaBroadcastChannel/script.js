@@ -17,6 +17,6 @@ export const newWorker = () => {
 
 export const newHandler = () => {
     const newFragment = Handler.newFragment();
-    const url = `${BASE_URL}/withHandler.html#${newFragment}`;
+    const url = `${BASE_URL}/withHandler#${newFragment}`;
     window.open(url);
 }

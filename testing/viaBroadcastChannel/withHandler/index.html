@@ -3,30 +3,35 @@
 
 <head>
   <meta charset="utf-8">
-  <title>viaPostMessage</title>
+  <title>viaBroadcastChannel</title>
+  <script src="../script.js" type="module"></script>
   <script src="./script.js" type="module"></script>
   <script type="module">
-    import { testClear, newTab, isAlive, testSetFn, testPoll, clearFns, testRun } from "./script.js"
+    import { newWorker, newHandler, testClear, isAlive, findNeighbours, testSetFn, testPoll, clearFns, testRun } from "./script.js";
+    window.newWorker = newWorker;
+    window.newHandler = newHandler;
     window.testClear = testClear;
-    window.newTab = newTab;
     window.isAlive = isAlive;
+    window.findNeighbours = findNeighbours;
     window.testSetFn = testSetFn;
     window.testPoll = testPoll;
-    window.clearFns = clearFns;
+    window.testClearFns = clearFns;
     window.testRun = testRun;
   </script>
 </head>
 
 <body>
   <div style="margin-top: 16px; margin-left: 12px;">
-    <input type="button" onclick="newTab()" value="New Tab">
+    <input type="button" onclick="newWorker()" value="New Worker">
+    <input type="button" onclick="newHandler()" value="New Handler">
     <input type="button" onclick="testClear()" value="Clear Internal List">
   </div>
   <div style="margin-top: 16px; margin-left: 12px;">
     <input type="button" onclick="isAlive()" value="Is Alive">
+    <input type="button" onclick="findNeighbours()" value="Find Neighbours">
     <input type="button" onclick="testSetFn()" value="Set Fn">
     <input type="button" onclick="testPoll()" value="Poll">
-    <input type="button" onclick="clearFns()" value="Clear Fns">
+    <input type="button" onclick="testClearFns()" value="Clear Fns">
     <input type="button" onclick="testRun()" value="Run">
   </div>
 </body>

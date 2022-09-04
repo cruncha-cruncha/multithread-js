@@ -66,7 +66,7 @@ const Operator = (() => {
                 return { success: false, hint: "bad fnName" };
             }
 
-            fnToRun = functions[fnName];
+            const fnToRun = functions[fnName];
 
             if (!Array.isArray(args)) {
                 stopRun(runKey);
@@ -93,13 +93,13 @@ const Operator = (() => {
 
 export const getGenericHandler = ({ sendMessage, checkThreadKey }) => {
     return async (packet) => {
-        const { success: validShape, hint: hint51 = "", message = null } = validateMessageShape(packet);
+        const { success: validShape, hint: hint51, message } = validateMessageShape(packet);
 
         if (!validShape || (checkThreadKey && message.threadKey !== "*" && message.threadKey !== threadKey)) {
             return;
         }
 
-        const { success: validData, hint: hint46 = "", data = null } = validateMessageData({ intention: message.intention, data: message.data });
+        const { success: validData, hint: hint46, data } = validateMessageData({ intention: message.intention, data: message.data });
 
         if (!validData) {
             return;
@@ -109,7 +109,7 @@ export const getGenericHandler = ({ sendMessage, checkThreadKey }) => {
 
         switch (message.intention) {
             case 'set-fn': {
-                const { success, hint = "" } = Operator.setFn({ ...data });
+                const { success, hint } = Operator.setFn({ ...data });
                 if (success) {
                     sendMessage({ nonce, intention: "set-fn-good" });
                 } else {
@@ -121,7 +121,7 @@ export const getGenericHandler = ({ sendMessage, checkThreadKey }) => {
                 Operator.clearFunctions();
                 break;
             case 'run': {
-                const { success, hint = "", result = null } = await Operator.run({ ...data, runKey: nonce });
+                const { success, hint, result } = await Operator.run({ ...data, runKey: nonce });
                 if (success) {
                     sendMessage({ nonce, intention: "run-good", data: { result } });
                 } else {

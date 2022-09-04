@@ -8,7 +8,7 @@ export const sleep = (ms) => {
 }
 
 export const enqueueResponse = (resp) => {
-    const { success: validShape, message = null } = validateMessageShape(resp);
+    const { success: validShape, message } = validateMessageShape(resp);
 
     if (!validShape) {
         return false;
@@ -40,7 +40,7 @@ export const waitForResponse = async ({ nonce, retry = 50, pause = 100 }) => {
         if (i >= retry) return { success: false, hint: "retry limit" };
         i++;
 
-        const { found, val = null } = responseBuffer.take({ key: nonce });
+        const { found, val } = responseBuffer.take({ key: nonce });
         if (found) return { success: true, message: val };
 
         await sleep(pause);

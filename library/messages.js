@@ -1,6 +1,6 @@
 export const validIntentions = Object.freeze({
     "set-fn": ["set-fn-bad", "set-fn-good"],
-    "clear-all-fns": [],
+    "clear-fns": [],
     "run": ["run-bad", "run-good"],
     "poll": ["meta"],
     "is-alive": ["am-alive"],
@@ -44,6 +44,10 @@ export const validateNonce = (nonce) => {
 export const validateThreadKey = (key) => {
     if (!key || typeof key !== "string") {
         return false;
+    }
+
+    if (key === "*") {
+        return true;
     }
 
     const matches = key.match(/^[1-9]{8}$/);
@@ -125,7 +129,7 @@ export const validateMessageData = ({ intention, data }) => {
 }
 
 const attemptParse = (parse, data) => {
-    const { success, hint = "", data: goodData = null } = parse(data);
+    const { success, hint, data: goodData } = parse(data);
     if (success) {
         return { success, data: goodData };
     } else {

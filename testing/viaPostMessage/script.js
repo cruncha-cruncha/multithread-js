@@ -3,19 +3,32 @@ import { Handler } from "../../library/leader/viaPostMessage.js";
 // python -m http.server 8000
 
 let windowList = [];
+const handler = new Handler();
 
 const add = (a, b) => {
     return a + b;
 }
 
-const handler = new Handler();
+const getTestRun = () => {
+    return {
+        fnName: "add",
+        args: [1, 2],
+    };
+}
+
+const getTestFn = () => {
+    return {
+        fnName: "add",
+        sFn: add.toString(),
+    };
+}
 
 export const testClear = () => {
     windowList = [];
 }
 
 export const newTab = () => {
-    const { success, hint = "", window: newWindow = null } = Handler.spawnWindow();
+    const { success, hint, window: newWindow } = Handler.spawnWindow();
     if (success) {
         windowList.push(newWindow);
     } else {
@@ -31,7 +44,11 @@ export const isAlive = async () => {
 }
 
 export const testSetFn = () => {
-
+    const fnArgs = getTestFn(); 
+    windowList.forEach(async (targetWindow) => {
+        const out = await handler.setFn({ ...fnArgs, targetWindow });
+        console.log("setFn", { ...out });
+    });
 }
 
 export const testPoll = () => {
@@ -41,10 +58,16 @@ export const testPoll = () => {
     });
 }
 
-export const clearAllFns = () => {
-
+export const clearFns = () => {
+    windowList.forEach(async (targetWindow) => { 
+        handler.clearFns({ targetWindow });
+    });
 }
 
-export const run = () => {
-
+export const testRun = () => {
+    const runArgs = getTestRun(); 
+    windowList.forEach(async (targetWindow) => { 
+        const out = await handler.execute({ ...runArgs, targetWindow });
+        console.log("run", { ...out });
+    });
 }

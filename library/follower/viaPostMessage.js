@@ -22,7 +22,7 @@ const listener = async (event) => {
 }
 
 const getSendMessage = ({ targetWindow }) => {
-    return ({ nonce, intention, data = null }) => {
+    return ({ nonce, intention, data }) => {
         if (!validateWindow(targetWindow)) {
             return () => false;
         }

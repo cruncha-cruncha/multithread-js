@@ -11,6 +11,7 @@ import {
     getPoll,
     getClearFns,
     getExecute,
+    receiveMessage,
 } from "./singles.js";
 
 export const CHANNEL_NAME = "MULTITHREAD-JS-B2-C2" // guaranteed to be random lol
@@ -31,13 +32,49 @@ export class Handler {
         }
     }
 
-    // TODO: sendAllMessage "is-alive", could get several am-alive responses
-    static async getNeighbours() {
-
-    }
-
     static newFragment = () => {
         return newThreadKey();
+    }
+
+    async findNeighbours() {
+        const sendMessage = getSendAllMessage({ channel: this.#channel });
+
+        const { success: sent, hint: hint41, nonce } = sendMessage({
+            intention: 'is-alive',
+        });
+
+        if (!sent) {
+            return { keys: [], all: [] };
+        }
+
+        const possibles = [];
+        const failures = [];
+        let consecutiveFailures = 0;
+        while (consecutiveFailures < 2) {
+            const { success: reception, hint: hint39, intention, data } = await receiveMessage({ nonce, retry: 2, pause: 50 });
+
+            if (!reception) {
+                consecutiveFailures += 1;
+                failures.push({ success: false, hint: hint39 });
+                continue;
+            }
+
+            if (intention !== "am-alive") {
+                consecutiveFailures += 1;
+                failures.push({ success: false, hint: "ill-intentioned response message" });
+                continue;
+            }
+
+            consecutiveFailures = 0;
+            possibles.push({ success: true, possibleThreadKey: data.possibleThreadKey });
+        }
+
+        return {
+            keys: possibles
+                .filter(({ possibleThreadKey }) => validateThreadKey(possibleThreadKey))
+                .map(({ possibleThreadKey }) => possibleThreadKey),
+            all: [ ...possibles, ...failures ],
+        };
     }
 
     checkLive({ fragment }) {
@@ -48,7 +85,7 @@ export class Handler {
     setFn({ fragment, fnName, sFn }) {
         const sendMessage = getSendMessage({ channel: this.#channel, fragment });
         return getSetFn({ sendMessage, waitForResponse })({ fnName, sFn });
-    } 
+    }
 
     poll({ fragment }) {
         const sendMessage = getSendMessage({ channel: this.#channel, fragment });
@@ -75,7 +112,7 @@ export const validateChannel = (channel) => {
 }
 
 const getSendMessage = ({ channel, fragment: threadKey }) => {
-    return ({ intention, data=null }) => {
+    return ({ intention, data = null }) => {
         if (!validateChannel(channel)) {
             return { success: false, hint: "bad channel" };
         }
@@ -106,7 +143,7 @@ const getSendMessage = ({ channel, fragment: threadKey }) => {
 }
 
 const getSendAllMessage = ({ channel }) => {
-    return ({ intention, data=null }) => {
+    return ({ intention, data }) => {
         if (!validateChannel(channel)) {
             return { success: false, hint: "bad channel" };
         }
